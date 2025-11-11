@@ -3,10 +3,6 @@ import * as emoji from 'node-emoji'
 
 function RichTextEditor({ value, onChange }) {
   const editorRef = useRef(null)
-  const [showLinkInput, setShowLinkInput] = useState(false)
-  const [linkUrl, setLinkUrl] = useState('')
-  const [linkText, setLinkText] = useState('')
-  const savedSelectionRef = useRef(null)
 
   // Emoji autocomplete state
   const [showEmojiPopup, setShowEmojiPopup] = useState(false)
@@ -286,142 +282,9 @@ function RichTextEditor({ value, onChange }) {
     }
   }
 
-  const applyFormat = (command) => {
-    document.execCommand(command, false, null)
-    editorRef.current?.focus()
-  }
-
-  const handleLinkButtonClick = () => {
-    const selection = window.getSelection()
-    const selectedText = selection.toString().trim()
-
-    if (selectedText) {
-      // Save the selection range
-      if (selection.rangeCount > 0) {
-        savedSelectionRef.current = selection.getRangeAt(0)
-      }
-      // Pre-fill with selected text
-      setLinkText(selectedText)
-    } else {
-      savedSelectionRef.current = null
-      setLinkText('')
-    }
-
-    setShowLinkInput(!showLinkInput)
-  }
-
-  const insertLink = () => {
-    if (!linkUrl) return
-
-    const text = linkText || linkUrl
-    const linkHtml = `<a href="${linkUrl}" target="_blank" rel="noopener noreferrer" style="color: #db2777; text-decoration: underline;">${text}</a>`
-
-    // Restore the saved selection if we have one
-    if (savedSelectionRef.current) {
-      const selection = window.getSelection()
-      selection.removeAllRanges()
-      selection.addRange(savedSelectionRef.current)
-    }
-
-    const selection = window.getSelection()
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0)
-      range.deleteContents()
-      const tempDiv = document.createElement('div')
-      tempDiv.innerHTML = linkHtml
-      range.insertNode(tempDiv.firstChild)
-    }
-
-    setShowLinkInput(false)
-    setLinkUrl('')
-    setLinkText('')
-    savedSelectionRef.current = null
-    handleInput()
-    editorRef.current?.focus()
-  }
 
   return (
     <div className="space-y-2 relative">
-      {/* Toolbar */}
-      <div className="flex flex-wrap gap-2 p-2 bg-white/50 rounded-lg romantic-border">
-        <button
-          type="button"
-          onClick={() => applyFormat('bold')}
-          className="px-3 py-1 bg-white hover:bg-romantic-100 rounded border border-romantic-300 font-bold transition-colors"
-          title="Bold"
-        >
-          B
-        </button>
-        <button
-          type="button"
-          onClick={() => applyFormat('italic')}
-          className="px-3 py-1 bg-white hover:bg-romantic-100 rounded border border-romantic-300 italic transition-colors"
-          title="Italic"
-        >
-          I
-        </button>
-        <button
-          type="button"
-          onClick={handleLinkButtonClick}
-          className="px-3 py-1 bg-white hover:bg-romantic-100 rounded border border-romantic-300 transition-colors"
-          title="Insert Link (Select text first to turn it into a link)"
-        >
-          Link
-        </button>
-        <div className="flex-1 flex items-center justify-end">
-          <span className="text-xs text-gray-500 italic" title="Type : to open emoji picker with autocomplete! Also supports shortcuts like <3 :) with SPACE">
-            ✨ Type : for emoji picker or &lt;3 :) + SPACE
-          </span>
-        </div>
-      </div>
-
-      {/* Link Input Modal */}
-      {showLinkInput && (
-        <div className="p-3 bg-white rounded-lg romantic-border space-y-2">
-          <input
-            type="text"
-            placeholder="Link text"
-            value={linkText}
-            onChange={(e) => setLinkText(e.target.value)}
-            className="w-full px-3 py-2 border border-romantic-300 rounded focus:outline-none focus:border-romantic-500"
-          />
-          <input
-            type="url"
-            placeholder="https://example.com"
-            value={linkUrl}
-            onChange={(e) => setLinkUrl(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                insertLink()
-              }
-            }}
-            className="w-full px-3 py-2 border border-romantic-300 rounded focus:outline-none focus:border-romantic-500"
-            autoFocus
-          />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={insertLink}
-              className="px-4 py-2 bg-romantic-500 hover:bg-romantic-600 text-white rounded transition-colors"
-            >
-              Insert
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowLinkInput(false)
-                setLinkUrl('')
-                setLinkText('')
-                savedSelectionRef.current = null
-              }}
-              className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Emoji Autocomplete Popup */}
       {showEmojiPopup && emojiSuggestions.length > 0 && (
         <div

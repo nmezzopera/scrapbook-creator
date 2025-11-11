@@ -25,6 +25,29 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
   const titleInputRef = useRef(null)
   const fileInputRef = useRef(null)
   const updateTimeoutRef = useRef(null)
+  const titleContainerRef = useRef(null)
+
+  // Click outside to close title editing
+  useEffect(() => {
+    if (!isEditingTitle) return
+
+    const handleClickOutside = (event) => {
+      if (titleContainerRef.current && !titleContainerRef.current.contains(event.target)) {
+        setIsEditingTitle(false)
+        if (updateTimeoutRef.current) {
+          clearTimeout(updateTimeoutRef.current)
+        }
+        onUpdate(section.id, { title: localTitle })
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isEditingTitle, localTitle, section.id, onUpdate])
 
   // Debounced auto-save for title
   useEffect(() => {
@@ -231,30 +254,45 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
       <div className="bg-white/80 backdrop-blur rounded-2xl p-4 sm:p-6 romantic-shadow romantic-border overflow-hidden w-full h-full flex flex-col">
         {/* Inline Title Editing */}
         {!isLocked && isEditingTitle ? (
-          <input
-            ref={titleInputRef}
-            type="text"
-            value={localTitle}
-            onChange={(e) => setLocalTitle(e.target.value)}
-            onBlur={() => {
-              setIsEditingTitle(false)
-              if (updateTimeoutRef.current) {
-                clearTimeout(updateTimeoutRef.current)
-              }
-              onUpdate(section.id, { title: localTitle })
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+          <div ref={titleContainerRef} className="relative mb-4 flex-shrink-0">
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              onBlur={() => {
                 setIsEditingTitle(false)
                 if (updateTimeoutRef.current) {
                   clearTimeout(updateTimeoutRef.current)
                 }
                 onUpdate(section.id, { title: localTitle })
-              }
-            }}
-            placeholder="Click to add title..."
-            className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 uppercase tracking-wide border-b-2 border-romantic-400 pb-2 sm:pb-3 mb-4 flex-shrink-0 focus:outline-none focus:border-romantic-600 px-2 bg-romantic-50/50"
-          />
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsEditingTitle(false)
+                  if (updateTimeoutRef.current) {
+                    clearTimeout(updateTimeoutRef.current)
+                  }
+                  onUpdate(section.id, { title: localTitle })
+                }
+              }}
+              placeholder="Click to add title..."
+              className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 uppercase tracking-wide border-b-2 border-romantic-400 pb-2 sm:pb-3 focus:outline-none focus:border-romantic-600 px-2 bg-romantic-50/50 w-full pr-12"
+            />
+            <button
+              onClick={() => {
+                setIsEditingTitle(false)
+                if (updateTimeoutRef.current) {
+                  clearTimeout(updateTimeoutRef.current)
+                }
+                onUpdate(section.id, { title: localTitle })
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-2 shadow-md"
+              title="Done"
+            >
+              ✓
+            </button>
+          </div>
         ) : (
           <h2
             onClick={() => !isLocked && setIsEditingTitle(true)}

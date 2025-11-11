@@ -13,10 +13,56 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
   const titleInputRef = useRef(null)
   const subtitleInputRef = useRef(null)
   const updateTimeoutRef = useRef(null)
+  const titleContainerRef = useRef(null)
+  const bottomTextContainerRef = useRef(null)
 
   const toggleLock = () => {
     onUpdate(section.id, { isLocked: !isLocked })
   }
+
+  // Click outside to close title editing
+  useEffect(() => {
+    if (!isEditingTitle) return
+
+    const handleClickOutside = (event) => {
+      if (titleContainerRef.current && !titleContainerRef.current.contains(event.target)) {
+        setIsEditingTitle(false)
+        if (updateTimeoutRef.current) {
+          clearTimeout(updateTimeoutRef.current)
+        }
+        onUpdate(section.id, { title: localTitle })
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isEditingTitle, localTitle, section.id, onUpdate])
+
+  // Click outside to close bottom text editing
+  useEffect(() => {
+    if (!isEditingBottomText) return
+
+    const handleClickOutside = (event) => {
+      if (bottomTextContainerRef.current && !bottomTextContainerRef.current.contains(event.target)) {
+        setIsEditingBottomText(false)
+        if (updateTimeoutRef.current) {
+          clearTimeout(updateTimeoutRef.current)
+        }
+        onUpdate(section.id, { subtitle: localSubtitle })
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isEditingBottomText, localSubtitle, section.id, onUpdate])
 
   // Focus title input when editing starts
   useEffect(() => {
@@ -137,30 +183,45 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
           <div className="px-8">
             {/* Inline Title Editing */}
             {!isLocked && isEditingTitle ? (
-              <input
-                ref={titleInputRef}
-                type="text"
-                value={localTitle}
-                onChange={(e) => setLocalTitle(e.target.value)}
-                onBlur={() => {
-                  setIsEditingTitle(false)
-                  if (updateTimeoutRef.current) {
-                    clearTimeout(updateTimeoutRef.current)
-                  }
-                  onUpdate(section.id, { title: localTitle })
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+              <div ref={titleContainerRef} className="relative mb-4">
+                <input
+                  ref={titleInputRef}
+                  type="text"
+                  value={localTitle}
+                  onChange={(e) => setLocalTitle(e.target.value)}
+                  onBlur={() => {
                     setIsEditingTitle(false)
                     if (updateTimeoutRef.current) {
                       clearTimeout(updateTimeoutRef.current)
                     }
                     onUpdate(section.id, { title: localTitle })
-                  }
-                }}
-                className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-gray-900 mb-4 leading-tight w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded"
-                placeholder="Your Title Here"
-              />
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setIsEditingTitle(false)
+                      if (updateTimeoutRef.current) {
+                        clearTimeout(updateTimeoutRef.current)
+                      }
+                      onUpdate(section.id, { title: localTitle })
+                    }
+                  }}
+                  className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-gray-900 leading-tight w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-14"
+                  placeholder="Your Title Here"
+                />
+                <button
+                  onClick={() => {
+                    setIsEditingTitle(false)
+                    if (updateTimeoutRef.current) {
+                      clearTimeout(updateTimeoutRef.current)
+                    }
+                    onUpdate(section.id, { title: localTitle })
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-2 shadow-md text-2xl"
+                  title="Done"
+                >
+                  ✓
+                </button>
+              </div>
             ) : (
               <h1
                 onClick={() => !isLocked && setIsEditingTitle(true)}
@@ -196,30 +257,45 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
 
         {/* Inline Bottom Text Editing */}
         {!isLocked && isEditingBottomText ? (
-          <input
-            ref={subtitleInputRef}
-            type="text"
-            value={localSubtitle}
-            onChange={(e) => setLocalSubtitle(e.target.value)}
-            onBlur={() => {
-              setIsEditingBottomText(false)
-              if (updateTimeoutRef.current) {
-                clearTimeout(updateTimeoutRef.current)
-              }
-              onUpdate(section.id, { subtitle: localSubtitle })
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+          <div ref={bottomTextContainerRef} className="relative mt-8">
+            <input
+              ref={subtitleInputRef}
+              type="text"
+              value={localSubtitle}
+              onChange={(e) => setLocalSubtitle(e.target.value)}
+              onBlur={() => {
                 setIsEditingBottomText(false)
                 if (updateTimeoutRef.current) {
                   clearTimeout(updateTimeoutRef.current)
                 }
                 onUpdate(section.id, { subtitle: localSubtitle })
-              }
-            }}
-            className="text-lg md:text-xl text-gray-600 mt-8 italic w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded"
-            placeholder="and beyond"
-          />
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsEditingBottomText(false)
+                  if (updateTimeoutRef.current) {
+                    clearTimeout(updateTimeoutRef.current)
+                  }
+                  onUpdate(section.id, { subtitle: localSubtitle })
+                }
+              }}
+              className="text-lg md:text-xl text-gray-600 italic w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-12"
+              placeholder="and beyond"
+            />
+            <button
+              onClick={() => {
+                setIsEditingBottomText(false)
+                if (updateTimeoutRef.current) {
+                  clearTimeout(updateTimeoutRef.current)
+                }
+                onUpdate(section.id, { subtitle: localSubtitle })
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-1 shadow-md"
+              title="Done"
+            >
+              ✓
+            </button>
+          </div>
         ) : section.subtitle || !isLocked ? (
           <p
             onClick={() => !isLocked && setIsEditingBottomText(true)}

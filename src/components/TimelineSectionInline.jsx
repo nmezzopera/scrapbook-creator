@@ -12,12 +12,55 @@ function TimelineSectionInline({ section, index, totalSections, onUpdate, onDele
 
   const titleInputRef = useRef(null)
   const updateTimeoutRef = useRef(null)
+  const titleContainerRef = useRef(null)
+  const eventEditRefs = useRef({})
 
   const events = section.events || []
 
   const toggleLock = () => {
     onUpdate(section.id, { isLocked: !isLocked })
   }
+
+  // Click outside to close title editing
+  useEffect(() => {
+    if (!isEditingTitle) return
+
+    const handleClickOutside = (event) => {
+      if (titleContainerRef.current && !titleContainerRef.current.contains(event.target)) {
+        setIsEditingTitle(false)
+        if (updateTimeoutRef.current) {
+          clearTimeout(updateTimeoutRef.current)
+        }
+        onUpdate(section.id, { title: localTitle })
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [isEditingTitle, localTitle, section.id, onUpdate])
+
+  // Click outside to close event editing
+  useEffect(() => {
+    if (editingEventIndex === null) return
+
+    const handleClickOutside = (event) => {
+      const eventRef = eventEditRefs.current[editingEventIndex]
+      if (eventRef && !eventRef.contains(event.target)) {
+        setEditingEventIndex(null)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [editingEventIndex])
 
   // Focus title input when editing starts
   useEffect(() => {
@@ -139,30 +182,45 @@ function TimelineSectionInline({ section, index, totalSections, onUpdate, onDele
       <div className="bg-white/80 backdrop-blur rounded-2xl p-8 md:p-12 romantic-shadow romantic-border w-full h-full overflow-auto">
         {/* Inline Title Editing */}
         {!isLocked && isEditingTitle ? (
-          <input
-            ref={titleInputRef}
-            type="text"
-            value={localTitle}
-            onChange={(e) => setLocalTitle(e.target.value)}
-            onBlur={() => {
-              setIsEditingTitle(false)
-              if (updateTimeoutRef.current) {
-                clearTimeout(updateTimeoutRef.current)
-              }
-              onUpdate(section.id, { title: localTitle })
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+          <div ref={titleContainerRef} className="relative mb-8 md:mb-12">
+            <input
+              ref={titleInputRef}
+              type="text"
+              value={localTitle}
+              onChange={(e) => setLocalTitle(e.target.value)}
+              onBlur={() => {
                 setIsEditingTitle(false)
                 if (updateTimeoutRef.current) {
                   clearTimeout(updateTimeoutRef.current)
                 }
                 onUpdate(section.id, { title: localTitle })
-              }
-            }}
-            className="text-5xl md:text-6xl font-serif font-bold text-gray-900 mb-8 md:mb-12 w-full bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded"
-            placeholder="Timeline Title"
-          />
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsEditingTitle(false)
+                  if (updateTimeoutRef.current) {
+                    clearTimeout(updateTimeoutRef.current)
+                  }
+                  onUpdate(section.id, { title: localTitle })
+                }
+              }}
+              className="text-5xl md:text-6xl font-serif font-bold text-gray-900 w-full bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-16"
+              placeholder="Timeline Title"
+            />
+            <button
+              onClick={() => {
+                setIsEditingTitle(false)
+                if (updateTimeoutRef.current) {
+                  clearTimeout(updateTimeoutRef.current)
+                }
+                onUpdate(section.id, { title: localTitle })
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-2 shadow-md text-2xl"
+              title="Done"
+            >
+              ✓
+            </button>
+          </div>
         ) : (
           <h2
             onClick={() => !isLocked && setIsEditingTitle(true)}
@@ -201,7 +259,10 @@ function TimelineSectionInline({ section, index, totalSections, onUpdate, onDele
                         onMouseLeave={() => setHoveredEventIndex(null)}
                       >
                         {!isLocked && isEditing ? (
-                          <div className="bg-romantic-50/50 p-4 rounded-lg space-y-2">
+                          <div
+                            ref={(el) => eventEditRefs.current[eventIdx] = el}
+                            className="bg-romantic-50/50 p-4 rounded-lg space-y-2"
+                          >
                             <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <label className="block text-xs font-semibold mb-1 text-gray-700">Year</label>
@@ -237,9 +298,9 @@ function TimelineSectionInline({ section, index, totalSections, onUpdate, onDele
                             <div className="flex justify-end gap-2">
                               <button
                                 onClick={() => setEditingEventIndex(null)}
-                                className="px-3 py-1 bg-romantic-600 text-white rounded hover:bg-romantic-700 text-sm"
+                                className="px-4 py-2 bg-romantic-600 text-white rounded hover:bg-romantic-700 text-sm flex items-center gap-1"
                               >
-                                Done
+                                ✓ Done
                               </button>
                             </div>
                           </div>
