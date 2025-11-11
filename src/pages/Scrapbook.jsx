@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../firebase'
-import Section from '../components/Section'
+import SectionInline from '../components/SectionInline'
+import TitleSectionInline from '../components/TitleSectionInline'
+import TimelineSectionInline from '../components/TimelineSectionInline'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { useSnackbar } from '../contexts/SnackbarContext'
@@ -29,15 +31,12 @@ import {
   PictureAsPdf as PdfIcon,
   Title as TitleIcon,
   Timeline as TimelineIcon,
-  Visibility as VisibilityIcon,
-  Edit as EditIcon,
 } from '@mui/icons-material'
 
 function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
   const navigate = useNavigate()
   const { showInfo, showSuccess, showError } = useSnackbar()
   const [isExporting, setIsExporting] = useState(false)
-  const [viewMode, setViewMode] = useState(false)
 
   // Redirect if not authenticated
   if (!user) {
@@ -215,21 +214,12 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
             <Typography variant="body2" sx={{ color: 'text.primary', display: { xs: 'none', sm: 'block' } }}>
               {user.displayName}
             </Typography>
-            {!viewMode && (
-              <Chip
-                icon={syncing ? <CloudSyncIcon /> : <CloudDoneIcon />}
-                label={syncing ? 'Syncing...' : 'Synced'}
-                color={syncing ? 'default' : 'success'}
-                size="small"
-              />
-            )}
-            <IconButton
-              onClick={() => setViewMode(!viewMode)}
-              color={viewMode ? 'secondary' : 'primary'}
-              title={viewMode ? 'Edit Mode' : 'View Mode'}
-            >
-              {viewMode ? <EditIcon /> : <VisibilityIcon />}
-            </IconButton>
+            <Chip
+              icon={syncing ? <CloudSyncIcon /> : <CloudDoneIcon />}
+              label={syncing ? 'Syncing...' : 'Synced'}
+              color={syncing ? 'default' : 'success'}
+              size="small"
+            />
             <IconButton onClick={exportToPDF} color="secondary" disabled={isExporting || sections.length === 0} title="Export to PDF">
               {isExporting ? <CircularProgress size={24} /> : <PdfIcon />}
             </IconButton>
@@ -255,39 +245,37 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
         </Box>
 
         {/* Action Buttons */}
-        {!viewMode && (
-          <Stack direction="row" spacing={{ xs: 1, sm: 2 }} justifyContent="center" flexWrap="wrap" mb={4} useFlexGap>
-            <Button
-              variant="contained"
-              startIcon={<TitleIcon />}
-              onClick={() => addSection('title')}
-              size="medium"
-              color="secondary"
-              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-            >
-              Add Title Page
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<TimelineIcon />}
-              onClick={() => addSection('timeline')}
-              size="medium"
-              color="info"
-              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-            >
-              Add Timeline
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => addSection('regular')}
-              size="medium"
-              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
-            >
-              Add Regular Page
-            </Button>
-          </Stack>
-        )}
+        <Stack direction="row" spacing={{ xs: 1, sm: 2 }} justifyContent="center" flexWrap="wrap" mb={4} useFlexGap>
+          <Button
+            variant="contained"
+            startIcon={<TitleIcon />}
+            onClick={() => addSection('title')}
+            size="medium"
+            color="secondary"
+            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+          >
+            Add Title Page
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<TimelineIcon />}
+            onClick={() => addSection('timeline')}
+            size="medium"
+            color="info"
+            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+          >
+            Add Timeline
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => addSection('regular')}
+            size="medium"
+            sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+          >
+            Add Regular Page
+          </Button>
+        </Stack>
 
         {/* Sections */}
         {sections.length === 0 ? (
@@ -314,51 +302,68 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
                     }
                   }}
                 >
-                  <Section
-                    section={section}
-                    index={index}
-                    totalSections={sections.length}
-                    onUpdate={updateSection}
-                    onDelete={deleteSection}
-                    onMove={moveSection}
-                    viewMode={viewMode}
-                  />
+                  {section.type === 'title' ? (
+                    <TitleSectionInline
+                      section={section}
+                      index={index}
+                      totalSections={sections.length}
+                      onUpdate={updateSection}
+                      onDelete={deleteSection}
+                      onMove={moveSection}
+                    />
+                  ) : section.type === 'timeline' ? (
+                    <TimelineSectionInline
+                      section={section}
+                      index={index}
+                      totalSections={sections.length}
+                      onUpdate={updateSection}
+                      onDelete={deleteSection}
+                      onMove={moveSection}
+                    />
+                  ) : (
+                    <SectionInline
+                      section={section}
+                      index={index}
+                      totalSections={sections.length}
+                      onUpdate={updateSection}
+                      onDelete={deleteSection}
+                      onMove={moveSection}
+                    />
+                  )}
                 </Box>
 
                 {/* Add Section Buttons After This Section */}
-                {!viewMode && (
-                  <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', gap: 1 }}>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="secondary"
-                      startIcon={<TitleIcon />}
-                      onClick={() => addSection('title', index)}
-                      sx={{ fontSize: '0.75rem', py: 0.5, px: 1.5 }}
-                    >
-                      + Title
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="info"
-                      startIcon={<TimelineIcon />}
-                      onClick={() => addSection('timeline', index)}
-                      sx={{ fontSize: '0.75rem', py: 0.5, px: 1.5 }}
-                    >
-                      + Timeline
-                    </Button>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={<AddIcon />}
-                      onClick={() => addSection('regular', index)}
-                      sx={{ fontSize: '0.75rem', py: 0.5, px: 1.5 }}
-                    >
-                      + Page
-                    </Button>
-                  </Box>
-                )}
+                <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center', gap: 1 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<TitleIcon />}
+                    onClick={() => addSection('title', index)}
+                    sx={{ fontSize: '0.75rem', py: 0.5, px: 1.5 }}
+                  >
+                    + Title
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="info"
+                    startIcon={<TimelineIcon />}
+                    onClick={() => addSection('timeline', index)}
+                    sx={{ fontSize: '0.75rem', py: 0.5, px: 1.5 }}
+                  >
+                    + Timeline
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => addSection('regular', index)}
+                    sx={{ fontSize: '0.75rem', py: 0.5, px: 1.5 }}
+                  >
+                    + Page
+                  </Button>
+                </Box>
               </Box>
             ))}
           </Stack>
