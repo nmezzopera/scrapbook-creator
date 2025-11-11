@@ -9,8 +9,6 @@ import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate'
 import DeleteIcon from '@mui/icons-material/Delete'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
-import LockIcon from '@mui/icons-material/Lock'
-import LockOpenIcon from '@mui/icons-material/LockOpen'
 import { useSnackbar } from '../contexts/SnackbarContext'
 
 function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMove }) {
