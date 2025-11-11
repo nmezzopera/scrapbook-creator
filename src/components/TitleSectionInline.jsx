@@ -205,7 +205,7 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
                       onUpdate(section.id, { title: localTitle })
                     }
                   }}
-                  className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-gray-900 leading-tight w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-14"
+                  className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-gray-900 leading-tight w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-20"
                   placeholder="Your Title Here"
                 />
                 <button
@@ -216,7 +216,7 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
                     }
                     onUpdate(section.id, { title: localTitle })
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-2 shadow-md text-2xl"
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-3 shadow-lg border-2 border-romantic-300 text-2xl font-bold z-10"
                   title="Done"
                 >
                   ✓
@@ -279,7 +279,7 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
                   onUpdate(section.id, { subtitle: localSubtitle })
                 }
               }}
-              className="text-lg md:text-xl text-gray-600 italic w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-12"
+              className="text-lg md:text-xl text-gray-600 italic w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-16"
               placeholder="and beyond"
             />
             <button
@@ -290,7 +290,7 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
                 }
                 onUpdate(section.id, { subtitle: localSubtitle })
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-1 shadow-md"
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-2 shadow-lg border-2 border-romantic-300 text-lg font-bold z-10"
               title="Done"
             >
               ✓

@@ -277,7 +277,7 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                 }
               }}
               placeholder="Click to add title..."
-              className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 uppercase tracking-wide border-b-2 border-romantic-400 pb-2 sm:pb-3 focus:outline-none focus:border-romantic-600 px-2 bg-romantic-50/50 w-full pr-12"
+              className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 uppercase tracking-wide border-b-2 border-romantic-400 pb-2 sm:pb-3 focus:outline-none focus:border-romantic-600 px-2 bg-romantic-50/50 w-full pr-16"
             />
             <button
               onClick={() => {
@@ -287,7 +287,7 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                 }
                 onUpdate(section.id, { title: localTitle })
               }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-2 shadow-md"
+              className="absolute right-0 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-3 shadow-lg border-2 border-romantic-300 text-xl font-bold z-10"
               title="Done"
             >
               ✓
