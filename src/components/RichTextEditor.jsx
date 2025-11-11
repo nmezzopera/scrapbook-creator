@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import * as emoji from 'node-emoji'
 
-function RichTextEditor({ value, onChange }) {
+function RichTextEditor({ value, onChange, onDone }) {
   const editorRef = useRef(null)
 
   // Emoji autocomplete state
@@ -285,6 +285,20 @@ function RichTextEditor({ value, onChange }) {
 
   return (
     <div className="space-y-2 relative">
+      {/* Done button for mobile/tablet */}
+      {onDone && (
+        <div className="flex justify-end mb-2">
+          <button
+            type="button"
+            onClick={onDone}
+            className="text-romantic-600 hover:text-romantic-700 bg-white rounded-full px-4 py-2 shadow-lg border-2 border-romantic-300 text-sm font-bold"
+            title="Done"
+          >
+            ✓ Done
+          </button>
+        </div>
+      )}
+
       {/* Emoji Autocomplete Popup */}
       {showEmojiPopup && emojiSuggestions.length > 0 && (
         <div

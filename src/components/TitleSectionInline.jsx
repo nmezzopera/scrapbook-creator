@@ -183,44 +183,46 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
           <div className="px-8">
             {/* Inline Title Editing */}
             {!isLocked && isEditingTitle ? (
-              <div ref={titleContainerRef} className="relative mb-4">
-                <input
-                  ref={titleInputRef}
-                  type="text"
-                  value={localTitle}
-                  onChange={(e) => setLocalTitle(e.target.value)}
-                  onBlur={() => {
-                    setIsEditingTitle(false)
-                    if (updateTimeoutRef.current) {
-                      clearTimeout(updateTimeoutRef.current)
-                    }
-                    onUpdate(section.id, { title: localTitle })
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+              <div className="mb-4">
+                <div ref={titleContainerRef} className="flex items-center justify-center gap-2">
+                  <input
+                    ref={titleInputRef}
+                    type="text"
+                    value={localTitle}
+                    onChange={(e) => setLocalTitle(e.target.value)}
+                    onBlur={() => {
                       setIsEditingTitle(false)
                       if (updateTimeoutRef.current) {
                         clearTimeout(updateTimeoutRef.current)
                       }
                       onUpdate(section.id, { title: localTitle })
-                    }
-                  }}
-                  className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-gray-900 leading-tight w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-20"
-                  placeholder="Your Title Here"
-                />
-                <button
-                  onClick={() => {
-                    setIsEditingTitle(false)
-                    if (updateTimeoutRef.current) {
-                      clearTimeout(updateTimeoutRef.current)
-                    }
-                    onUpdate(section.id, { title: localTitle })
-                  }}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-3 shadow-lg border-2 border-romantic-300 text-2xl font-bold z-10"
-                  title="Done"
-                >
-                  ✓
-                </button>
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        setIsEditingTitle(false)
+                        if (updateTimeoutRef.current) {
+                          clearTimeout(updateTimeoutRef.current)
+                        }
+                        onUpdate(section.id, { title: localTitle })
+                      }
+                    }}
+                    className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-gray-900 leading-tight text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded flex-1 max-w-3xl"
+                    placeholder="Your Title Here"
+                  />
+                  <button
+                    onClick={() => {
+                      setIsEditingTitle(false)
+                      if (updateTimeoutRef.current) {
+                        clearTimeout(updateTimeoutRef.current)
+                      }
+                      onUpdate(section.id, { title: localTitle })
+                    }}
+                    className="flex-shrink-0 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-1.5 shadow-lg border-2 border-romantic-300 text-lg font-bold"
+                    title="Done"
+                  >
+                    ✓
+                  </button>
+                </div>
               </div>
             ) : (
               <h1
@@ -240,6 +242,7 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
                 <RichTextEditor
                   value={section.description || ''}
                   onChange={handleDescriptionChange}
+                  onDone={() => setIsEditingSubtitle(false)}
                 />
               </div>
             ) : (
@@ -257,44 +260,46 @@ function TitleSectionInline({ section, index, totalSections, onUpdate, onDelete,
 
         {/* Inline Bottom Text Editing */}
         {!isLocked && isEditingBottomText ? (
-          <div ref={bottomTextContainerRef} className="relative mt-8">
-            <input
-              ref={subtitleInputRef}
-              type="text"
-              value={localSubtitle}
-              onChange={(e) => setLocalSubtitle(e.target.value)}
-              onBlur={() => {
-                setIsEditingBottomText(false)
-                if (updateTimeoutRef.current) {
-                  clearTimeout(updateTimeoutRef.current)
-                }
-                onUpdate(section.id, { subtitle: localSubtitle })
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+          <div className="mt-8">
+            <div ref={bottomTextContainerRef} className="flex items-center justify-center gap-2">
+              <input
+                ref={subtitleInputRef}
+                type="text"
+                value={localSubtitle}
+                onChange={(e) => setLocalSubtitle(e.target.value)}
+                onBlur={() => {
                   setIsEditingBottomText(false)
                   if (updateTimeoutRef.current) {
                     clearTimeout(updateTimeoutRef.current)
                   }
                   onUpdate(section.id, { subtitle: localSubtitle })
-                }
-              }}
-              className="text-lg md:text-xl text-gray-600 italic w-full text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-16"
-              placeholder="and beyond"
-            />
-            <button
-              onClick={() => {
-                setIsEditingBottomText(false)
-                if (updateTimeoutRef.current) {
-                  clearTimeout(updateTimeoutRef.current)
-                }
-                onUpdate(section.id, { subtitle: localSubtitle })
-              }}
-              className="absolute right-0 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-2 shadow-lg border-2 border-romantic-300 text-lg font-bold z-10"
-              title="Done"
-            >
-              ✓
-            </button>
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setIsEditingBottomText(false)
+                    if (updateTimeoutRef.current) {
+                      clearTimeout(updateTimeoutRef.current)
+                    }
+                    onUpdate(section.id, { subtitle: localSubtitle })
+                  }
+                }}
+                className="text-lg md:text-xl text-gray-600 italic text-center bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded flex-1 max-w-xl"
+                placeholder="and beyond"
+              />
+              <button
+                onClick={() => {
+                  setIsEditingBottomText(false)
+                  if (updateTimeoutRef.current) {
+                    clearTimeout(updateTimeoutRef.current)
+                  }
+                  onUpdate(section.id, { subtitle: localSubtitle })
+                }}
+                className="flex-shrink-0 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-1.5 shadow-lg border-2 border-romantic-300 text-lg font-bold"
+                title="Done"
+              >
+                ✓
+              </button>
+            </div>
           </div>
         ) : section.subtitle || !isLocked ? (
           <p

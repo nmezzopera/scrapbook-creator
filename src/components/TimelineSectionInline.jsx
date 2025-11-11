@@ -182,44 +182,46 @@ function TimelineSectionInline({ section, index, totalSections, onUpdate, onDele
       <div className="bg-white/80 backdrop-blur rounded-2xl p-8 md:p-12 romantic-shadow romantic-border w-full h-full overflow-auto">
         {/* Inline Title Editing */}
         {!isLocked && isEditingTitle ? (
-          <div ref={titleContainerRef} className="relative mb-8 md:mb-12">
-            <input
-              ref={titleInputRef}
-              type="text"
-              value={localTitle}
-              onChange={(e) => setLocalTitle(e.target.value)}
-              onBlur={() => {
-                setIsEditingTitle(false)
-                if (updateTimeoutRef.current) {
-                  clearTimeout(updateTimeoutRef.current)
-                }
-                onUpdate(section.id, { title: localTitle })
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+          <div className="mb-8 md:mb-12">
+            <div ref={titleContainerRef} className="flex items-center gap-2">
+              <input
+                ref={titleInputRef}
+                type="text"
+                value={localTitle}
+                onChange={(e) => setLocalTitle(e.target.value)}
+                onBlur={() => {
                   setIsEditingTitle(false)
                   if (updateTimeoutRef.current) {
                     clearTimeout(updateTimeoutRef.current)
                   }
                   onUpdate(section.id, { title: localTitle })
-                }
-              }}
-              className="text-5xl md:text-6xl font-serif font-bold text-gray-900 w-full bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded pr-20"
-              placeholder="Timeline Title"
-            />
-            <button
-              onClick={() => {
-                setIsEditingTitle(false)
-                if (updateTimeoutRef.current) {
-                  clearTimeout(updateTimeoutRef.current)
-                }
-                onUpdate(section.id, { title: localTitle })
-              }}
-              className="absolute right-0 top-1/2 -translate-y-1/2 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-3 shadow-lg border-2 border-romantic-300 text-2xl font-bold z-10"
-              title="Done"
-            >
-              ✓
-            </button>
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setIsEditingTitle(false)
+                    if (updateTimeoutRef.current) {
+                      clearTimeout(updateTimeoutRef.current)
+                    }
+                    onUpdate(section.id, { title: localTitle })
+                  }
+                }}
+                className="text-5xl md:text-6xl font-serif font-bold text-gray-900 bg-romantic-50/50 focus:outline-none focus:bg-romantic-100/50 px-4 py-2 rounded flex-1"
+                placeholder="Timeline Title"
+              />
+              <button
+                onClick={() => {
+                  setIsEditingTitle(false)
+                  if (updateTimeoutRef.current) {
+                    clearTimeout(updateTimeoutRef.current)
+                  }
+                  onUpdate(section.id, { title: localTitle })
+                }}
+                className="flex-shrink-0 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-1.5 shadow-lg border-2 border-romantic-300 text-lg font-bold"
+                title="Done"
+              >
+                ✓
+              </button>
+            </div>
           </div>
         ) : (
           <h2
