@@ -202,9 +202,6 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
         />
       )}
 
-      {/* User Menu */}
-      <UserMenu />
-
       {/* App Bar */}
       <AppBar position="sticky" elevation={0} sx={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', top: 0, zIndex: 1100 }}>
         <Toolbar>
@@ -214,10 +211,6 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
           </Typography>
 
           <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar src={user.photoURL} alt={user.displayName} />
-            <Typography variant="body2" sx={{ color: 'text.primary', display: { xs: 'none', sm: 'block' } }}>
-              {user.displayName}
-            </Typography>
             <Chip
               icon={syncing ? <CloudSyncIcon /> : <CloudDoneIcon />}
               label={syncing ? 'Syncing...' : 'Synced'}
@@ -227,9 +220,7 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
             <IconButton onClick={exportToPDF} color="secondary" disabled={isExporting || sections.length === 0} title="Export to PDF">
               {isExporting ? <CircularProgress size={24} /> : <PdfIcon />}
             </IconButton>
-            <IconButton onClick={handleSignOut} color="primary" title="Sign Out">
-              <LogoutIcon />
-            </IconButton>
+            <UserMenu />
           </Stack>
         </Toolbar>
       </AppBar>

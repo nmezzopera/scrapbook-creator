@@ -166,9 +166,6 @@ function Admin({ user, sections, setSections }) {
         />
       )}
 
-      {/* User Menu */}
-      <UserMenu />
-
       {/* App Bar */}
       <AppBar position="static" elevation={0} sx={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)' }}>
         <Toolbar>
@@ -184,6 +181,7 @@ function Admin({ user, sections, setSections }) {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: 'primary.main', fontWeight: 600 }}>
             Admin Panel
           </Typography>
+          <UserMenu />
         </Toolbar>
       </AppBar>
 
