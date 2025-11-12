@@ -4,7 +4,8 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut
 } from 'firebase/auth'
-import { auth, googleProvider } from '../firebase'
+import { doc, onSnapshot } from 'firebase/firestore'
+import { auth, googleProvider, db } from '../firebase'
 import { getUserData, createUserProfile } from '../services/userService'
 
 const AuthContext = createContext()
@@ -23,8 +24,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let unsubscribeUserData = null
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user)
+
+      // Clean up previous Firestore listener
+      if (unsubscribeUserData) {
+        unsubscribeUserData()
+        unsubscribeUserData = null
+      }
 
       if (user) {
         // Fetch or create user data in Firestore
@@ -43,6 +52,16 @@ export function AuthProvider({ children }) {
           }
 
           setUserData(data)
+
+          // Set up real-time listener for user data changes
+          const userDocRef = doc(db, 'users', user.uid)
+          unsubscribeUserData = onSnapshot(userDocRef, (docSnap) => {
+            if (docSnap.exists()) {
+              setUserData({ id: docSnap.id, ...docSnap.data() })
+            }
+          }, (error) => {
+            console.error('Error listening to user data:', error)
+          })
         } catch (error) {
           console.error('Error fetching user data:', error)
         }
@@ -53,7 +72,12 @@ export function AuthProvider({ children }) {
       setLoading(false)
     })
 
-    return unsubscribe
+    return () => {
+      unsubscribeAuth()
+      if (unsubscribeUserData) {
+        unsubscribeUserData()
+      }
+    }
   }, [])
 
   const signInWithGoogle = async () => {
