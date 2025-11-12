@@ -340,7 +340,7 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
           </div>
 
           {/* Images with inline controls */}
-          <div className={`${!section.description && !isEditingDescription ? 'lg:col-span-2' : ''} ${index % 2 === 1 ? 'lg:col-start-1 lg:row-start-1' : ''}`}>
+          <div className={`${index % 2 === 1 ? 'lg:col-start-1 lg:row-start-1' : ''}`}>
             {!isLocked && (
               <div className="mb-4">
                 <input
