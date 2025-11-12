@@ -309,21 +309,23 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
         <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1 ${index % 2 === 1 ? 'lg:grid-flow-col-dense' : ''}`}>
           {/* Inline Description Editing */}
           <div className={`bg-romantic-50/50 p-4 rounded-lg ${!validImages.length ? 'lg:col-span-2' : ''} ${index % 2 === 1 ? 'lg:col-start-2' : ''} flex items-start`}>
-            {!isLocked && (isEditingDescription || !section.description) ? (
+            {!isLocked && isEditingDescription ? (
               <div className="w-full">
                 <RichTextEditor
                   value={section.description || ''}
                   onChange={handleDescriptionChange}
                   onDone={() => setIsEditingDescription(false)}
                 />
-                {!isEditingDescription && (
-                  <button
-                    onClick={() => setIsEditingDescription(true)}
-                    className="mt-2 text-sm text-romantic-600 hover:text-romantic-700 underline"
-                  >
-                    Start editing...
-                  </button>
-                )}
+              </div>
+            ) : !section.description && !isLocked ? (
+              <div
+                onClick={() => setIsEditingDescription(true)}
+                className="w-full flex items-center justify-center py-16 border-2 border-dashed border-romantic-300 rounded-lg hover:border-romantic-400 hover:bg-romantic-100/50 transition-colors cursor-pointer"
+              >
+                <div className="text-center">
+                  <p className="text-lg text-romantic-600 font-semibold mb-1">Click to add description</p>
+                  <p className="text-sm text-gray-500">Tell your story here...</p>
+                </div>
               </div>
             ) : (
               <div
@@ -331,7 +333,7 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                 className={`prose prose-base sm:prose-lg lg:prose-xl max-w-none text-gray-700 leading-relaxed w-full ${
                   !isLocked ? 'cursor-pointer hover:bg-romantic-100/50 rounded p-2 -m-2 transition-colors' : ''
                 }`}
-                dangerouslySetInnerHTML={{ __html: section.description || (!isLocked ? '<p class="text-gray-400">Click to add description...</p>' : '') }}
+                dangerouslySetInnerHTML={{ __html: section.description }}
                 title={!isLocked ? 'Click to edit description' : ''}
               />
             )}
