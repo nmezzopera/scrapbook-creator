@@ -26,7 +26,7 @@ function UserMenu() {
 
   return (
     <>
-      <div className="fixed top-4 right-4 z-40">
+      <div className="fixed top-4 right-4 z-[1200]">
         {isAuthenticated ? (
           <div className="relative">
             {/* User button */}

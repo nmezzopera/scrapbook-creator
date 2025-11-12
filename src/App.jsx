@@ -4,19 +4,17 @@ import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { Box, CircularProgress, Typography } from '@mui/material'
 import FavoriteIcon from '@mui/icons-material/Favorite'
-import { onAuthStateChanged } from 'firebase/auth'
 import { doc, setDoc, onSnapshot } from 'firebase/firestore'
-import { auth, db } from './firebase'
+import { db } from './firebase'
 import theme from './theme'
 import { SnackbarProvider } from './contexts/SnackbarContext'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Scrapbook from './pages/Scrapbook'
 import Admin from './pages/Admin'
 
-function App() {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+function AppContent() {
+  const { currentUser, loading: authLoading } = useAuth()
   const [sections, setSections] = useState([])
   const [syncing, setSyncing] = useState(false)
 
@@ -24,22 +22,6 @@ function App() {
   const isSigningOut = useRef(false)
   const unsubscribeFirestoreRef = useRef(null)
   const hasLoadedInitialData = useRef(false)
-
-  // Listen to auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser)
-      setLoading(false)
-
-      // Clear data when signing out
-      if (!currentUser) {
-        setSections([])
-        hasLoadedInitialData.current = false
-      }
-    })
-
-    return () => unsubscribe()
-  }, [])
 
   // Load data from Firestore when user is authenticated
   useEffect(() => {
@@ -49,13 +31,13 @@ function App() {
       unsubscribeFirestoreRef.current = null
     }
 
-    if (!user || isSigningOut.current) {
+    if (!currentUser || isSigningOut.current) {
       setSections([])
       hasLoadedInitialData.current = false
       return
     }
 
-    const docRef = doc(db, 'users', user.uid, 'scrapbooks', 'main')
+    const docRef = doc(db, 'users', currentUser.uid, 'scrapbooks', 'main')
 
     unsubscribeFirestoreRef.current = onSnapshot(
       docRef,
@@ -92,7 +74,7 @@ function App() {
         unsubscribeFirestoreRef.current = null
       }
     }
-  }, [user])
+  }, [currentUser])
 
   // Save to Firestore whenever sections change
   useEffect(() => {
@@ -101,16 +83,16 @@ function App() {
     // - Currently loading from Firestore
     // - Currently signing out
     // - Haven't loaded initial data yet
-    if (!user || isLoadingFromFirestore.current || isSigningOut.current || !hasLoadedInitialData.current) {
+    if (!currentUser || isLoadingFromFirestore.current || isSigningOut.current || !hasLoadedInitialData.current) {
       return
     }
 
     setSyncing(true)
-    const docRef = doc(db, 'users', user.uid, 'scrapbooks', 'main')
+    const docRef = doc(db, 'users', currentUser.uid, 'scrapbooks', 'main')
 
     const saveTimeout = setTimeout(() => {
       // Final check before saving
-      if (user && !isSigningOut.current && hasLoadedInitialData.current) {
+      if (currentUser && !isSigningOut.current && hasLoadedInitialData.current) {
         setDoc(docRef, {
           sections,
           updatedAt: new Date()
@@ -133,7 +115,7 @@ function App() {
       clearTimeout(saveTimeout)
       setSyncing(false)
     }
-  }, [sections, user])
+  }, [sections, currentUser])
 
   const handleSignOut = () => {
     isSigningOut.current = true
@@ -146,7 +128,6 @@ function App() {
 
     // Clear local state
     setSections([])
-    setUser(null)
     hasLoadedInitialData.current = false
 
     // Reset flag after a delay
@@ -155,7 +136,7 @@ function App() {
     }, 1000)
   }
 
-  if (loading) {
+  if (authLoading) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -192,21 +173,17 @@ function App() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <SnackbarProvider>
-          <BrowserRouter>
-            <Routes>
+    <BrowserRouter>
+      <Routes>
         <Route
           path="/login"
-          element={user ? <Navigate to="/scrapbook" /> : <Login />}
+          element={currentUser ? <Navigate to="/scrapbook" /> : <Login />}
         />
         <Route
           path="/scrapbook"
           element={
             <Scrapbook
-              user={user}
+              user={currentUser}
               sections={sections}
               setSections={setSections}
               syncing={syncing}
@@ -218,7 +195,7 @@ function App() {
           path="/admin"
           element={
             <Admin
-              user={user}
+              user={currentUser}
               sections={sections}
               setSections={setSections}
             />
@@ -226,10 +203,20 @@ function App() {
         />
         <Route
           path="/"
-          element={<Navigate to={user ? "/scrapbook" : "/login"} />}
+          element={<Navigate to={currentUser ? "/scrapbook" : "/login"} />}
         />
-            </Routes>
-          </BrowserRouter>
+      </Routes>
+    </BrowserRouter>
+  )
+}
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthProvider>
+        <SnackbarProvider>
+          <AppContent />
         </SnackbarProvider>
       </AuthProvider>
     </ThemeProvider>
