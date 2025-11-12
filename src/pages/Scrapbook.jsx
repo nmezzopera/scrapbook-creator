@@ -5,6 +5,7 @@ import { auth } from '../firebase'
 import SectionInline from '../components/SectionInline'
 import TitleSectionInline from '../components/TitleSectionInline'
 import TimelineSectionInline from '../components/TimelineSectionInline'
+import UserMenu from '../components/UserMenu'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { useSnackbar } from '../contexts/SnackbarContext'
@@ -200,6 +201,9 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
           }}
         />
       )}
+
+      {/* User Menu */}
+      <UserMenu />
 
       {/* App Bar */}
       <AppBar position="sticky" elevation={0} sx={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', top: 0, zIndex: 1100 }}>

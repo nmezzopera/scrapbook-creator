@@ -10,9 +10,12 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward'
 import { useSnackbar } from '../contexts/SnackbarContext'
+import { useAuth } from '../contexts/AuthContext'
+import { canUploadMoreImages, getMaxImages } from '../services/userService'
 
 function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMove }) {
   const { showError, showSuccess } = useSnackbar()
+  const { userData, isAuthenticated } = useAuth()
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [isEditingDescription, setIsEditingDescription] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
@@ -79,6 +82,23 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
 
     if (!user) {
       showError('Please sign in to upload images')
+      return
+    }
+
+    // Check user tier and existing image count
+    const currentImageCount = (section.images || []).length
+    const userTier = userData?.tier || 'free'
+
+    // Check if user can upload more images
+    if (!canUploadMoreImages(userTier, currentImageCount)) {
+      const maxImages = getMaxImages(userTier)
+      showError(`Free tier limited to ${maxImages} image per page. Upgrade to paid for unlimited images!`)
+      return
+    }
+
+    // For free tier, limit to 1 image total
+    if (userTier === 'free' && currentImageCount + files.length > 1) {
+      showError(`Free tier limited to 1 image per page. You can upload ${1 - currentImageCount} more image(s). Upgrade for unlimited!`)
       return
     }
 
@@ -194,6 +214,10 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
 
   const validImages = (section.images || []).filter(img => !failedImages.has(img))
   const isLocked = section.isLocked || false
+  const userTier = userData?.tier || 'free'
+  const currentImageCount = validImages.length
+  const canAddMore = canUploadMoreImages(userTier, currentImageCount)
+  const maxImages = getMaxImages(userTier)
 
   const toggleLock = () => {
     onUpdate(section.id, { isLocked: !isLocked })
@@ -349,23 +373,36 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                   accept="image/*"
                   multiple
                   onChange={handleImageUpload}
-                  disabled={isUploading}
+                  disabled={isUploading || !canAddMore}
                   className="hidden"
                 />
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="w-full py-3 px-4 border-2 border-dashed border-romantic-300 rounded-lg hover:border-romantic-400 hover:bg-romantic-50 transition-colors flex items-center justify-center gap-2 text-romantic-600 disabled:opacity-50"
+                  disabled={isUploading || !canAddMore}
+                  className="w-full py-3 px-4 border-2 border-dashed border-romantic-300 rounded-lg hover:border-romantic-400 hover:bg-romantic-50 transition-colors flex flex-col items-center justify-center gap-2 text-romantic-600 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUploading ? (
                     <>
                       <CircularProgress size={20} />
                       <span>Uploading...</span>
                     </>
+                  ) : !canAddMore ? (
+                    <>
+                      <AddPhotoAlternateIcon />
+                      <span className="font-semibold">Image Limit Reached</span>
+                      <span className="text-xs text-gray-500">
+                        {userTier === 'free' ? `Free: ${maxImages} image per page. Upgrade for unlimited!` : 'Upgrade for more images'}
+                      </span>
+                    </>
                   ) : (
                     <>
                       <AddPhotoAlternateIcon />
                       <span>Add Images</span>
+                      {userTier === 'free' && (
+                        <span className="text-xs text-gray-500">
+                          Free: {currentImageCount}/{maxImages} used
+                        </span>
+                      )}
                     </>
                   )}
                 </button>

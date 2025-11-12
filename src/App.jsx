@@ -9,6 +9,7 @@ import { doc, setDoc, onSnapshot } from 'firebase/firestore'
 import { auth, db } from './firebase'
 import theme from './theme'
 import { SnackbarProvider } from './contexts/SnackbarContext'
+import { AuthProvider } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Scrapbook from './pages/Scrapbook'
 import Admin from './pages/Admin'
@@ -193,9 +194,10 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <SnackbarProvider>
-        <BrowserRouter>
-          <Routes>
+      <AuthProvider>
+        <SnackbarProvider>
+          <BrowserRouter>
+            <Routes>
         <Route
           path="/login"
           element={user ? <Navigate to="/scrapbook" /> : <Login />}
@@ -226,9 +228,10 @@ function App() {
           path="/"
           element={<Navigate to={user ? "/scrapbook" : "/login"} />}
         />
-      </Routes>
-    </BrowserRouter>
-    </SnackbarProvider>
+            </Routes>
+          </BrowserRouter>
+        </SnackbarProvider>
+      </AuthProvider>
     </ThemeProvider>
   )
 }

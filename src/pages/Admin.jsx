@@ -4,6 +4,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { doc, setDoc } from 'firebase/firestore'
 import { storage, db } from '../firebase'
 import { useSnackbar } from '../contexts/SnackbarContext'
+import UserMenu from '../components/UserMenu'
 import {
   Box,
   Container,
@@ -164,6 +165,9 @@ function Admin({ user, sections, setSections }) {
           }}
         />
       )}
+
+      {/* User Menu */}
+      <UserMenu />
 
       {/* App Bar */}
       <AppBar position="static" elevation={0} sx={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)' }}>
