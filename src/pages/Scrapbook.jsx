@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
-import { auth } from '../firebase'
+import { auth, db } from '../firebase'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 import SectionInline from '../components/SectionInline'
 import TitleSectionInline from '../components/TitleSectionInline'
 import TimelineSectionInline from '../components/TimelineSectionInline'
 import UserMenu from '../components/UserMenu'
-import { toPng } from 'html-to-image'
-import jsPDF from 'jspdf'
 import { useSnackbar } from '../contexts/SnackbarContext'
 import { useAuth } from '../contexts/AuthContext'
 import { countTotalImages, getTierLimits } from '../services/userService'
@@ -141,61 +140,48 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
     setExportError('')
 
     try {
-      // A4 landscape dimensions in mm
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
+      // Generate a random token
+      const token = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`
+
+      setExportProgress('Creating preview token...')
+
+      // Store the sections data with the token in Firestore
+      await setDoc(doc(db, 'pdfPreviews', token), {
+        sections: sections,
+        userId: user.uid,
+        createdAt: serverTimestamp()
       })
 
-      const pageWidth = 297
-      const pageHeight = 210
+      setExportProgress('Generating PDF on server...')
 
-      // Get all section elements
-      const sectionElements = document.querySelectorAll('[data-section-id]')
+      // Get the Cloud Function URL
+      // In production, this will be the deployed function URL
+      // For now, we'll use the Firebase project ID to construct it
+      const functionUrl = import.meta.env.VITE_PDF_FUNCTION_URL ||
+        `https://generatepdf-${import.meta.env.VITE_FIREBASE_REGION || 'us-central1'}-relationship-scrapbook.cloudfunctions.net/generatePdf`
 
-      for (let i = 0; i < sectionElements.length; i++) {
-        setExportProgress(`Processing page ${i + 1} of ${sectionElements.length}...`)
+      // Call the Cloud Function
+      const response = await fetch(`${functionUrl}?token=${token}`, {
+        method: 'GET',
+      })
 
-        const sectionElement = sectionElements[i]
-
-        // Capture the section as image (using lower settings to avoid memory issues)
-        const imgData = await toPng(sectionElement, {
-          quality: 0.8,
-          pixelRatio: 1.5, // Reduced from 2 to avoid large images
-          backgroundColor: '#ffffff',
-          skipFonts: true, // Skip external font CSS to avoid CORS errors
-          cacheBust: false,
-        })
-
-        // Load image to get dimensions
-        const img = new Image()
-        await new Promise((resolve, reject) => {
-          img.onload = resolve
-          img.onerror = reject
-          img.src = imgData
-        })
-
-        // Add new page for subsequent sections
-        if (i > 0) {
-          pdf.addPage()
-        }
-
-        // Calculate dimensions to fit A4 landscape
-        const imgWidth = pageWidth
-        const imgHeight = (img.height * pageWidth) / img.width
-
-        // Center the image if it's shorter than the page
-        const yOffset = imgHeight < pageHeight ? (pageHeight - imgHeight) / 2 : 0
-
-        // Add image to PDF
-        pdf.addImage(imgData, 'PNG', 0, yOffset, imgWidth, imgHeight)
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Server error: ${response.statusText}`)
       }
 
-      setExportProgress('Saving PDF...')
+      setExportProgress('Downloading PDF...')
 
-      // Save the PDF
-      pdf.save(`our-love-story-${new Date().toISOString().split('T')[0]}.pdf`)
+      // Download the PDF
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `our-love-story-${new Date().toISOString().split('T')[0]}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
 
       setExportStatus('success')
       setExportProgress('PDF created successfully!')

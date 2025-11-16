@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Scrapbook from './pages/Scrapbook'
 import AdminPanel from './pages/AdminPanel'
+import PdfPreview from './pages/PdfPreview'
 
 function AppContent() {
   const { currentUser, loading: authLoading } = useAuth()
@@ -194,6 +195,10 @@ function AppContent() {
         <Route
           path="/admin-panel"
           element={<AdminPanel />}
+        />
+        <Route
+          path="/pdf-preview/:token"
+          element={<PdfPreview />}
         />
         <Route
           path="/"

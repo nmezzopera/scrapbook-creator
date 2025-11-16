@@ -26,5 +26,17 @@ service cloud.firestore {
       // Users can access their own scrapbooks, admins can access all
       allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
+
+    // PDF preview tokens (temporary, auto-expire after 5 minutes)
+    match /pdfPreviews/{tokenId} {
+      // Users can create tokens for their own scrapbooks
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      // Users can read their own tokens, or anyone can read (since tokens are random and expire quickly)
+      allow read: if true; // Public read is OK since tokens expire in 5 min
+
+      // No update allowed, delete is handled by Cloud Function using Admin SDK
+      allow update, delete: if false;
+    }
   }
 }
