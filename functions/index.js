@@ -67,7 +67,7 @@ exports.generatePdf = onRequest({
 
     // Get the preview URL
     // This will be the hosted URL of your app + /pdf-preview/ + token
-    const baseUrl = process.env.APP_URL || req.headers.referer?.replace(/\/$/, '') || 'http://localhost:5173';
+    const baseUrl = process.env.APP_URL || 'https://relationship-scrapbook.web.app';
     const previewUrl = `${baseUrl}/pdf-preview/${token}`;
 
     console.log('Generating PDF from URL:', previewUrl);
