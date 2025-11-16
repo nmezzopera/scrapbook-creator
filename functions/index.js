@@ -90,13 +90,29 @@ exports.generatePdf = onRequest({
     });
 
     // Navigate to the preview page
+    console.log('Navigating to preview page...');
     await page.goto(previewUrl, {
-      waitUntil: 'networkidle0',
-      timeout: 60000
+      waitUntil: 'domcontentloaded',
+      timeout: 120000
     });
 
-    // Wait a bit for any animations or lazy loading
-    await page.waitForTimeout(2000);
+    console.log('Page loaded, waiting for images...');
+
+    // Wait for images to load
+    await page.evaluate(() => {
+      return Promise.all(
+        Array.from(document.images)
+          .filter(img => !img.complete)
+          .map(img => new Promise(resolve => {
+            img.onload = img.onerror = resolve;
+          }))
+      );
+    });
+
+    console.log('Images loaded, waiting for rendering...');
+
+    // Wait a bit for final rendering
+    await page.waitForTimeout(3000);
 
     // Generate PDF
     const pdfBuffer = await page.pdf({
