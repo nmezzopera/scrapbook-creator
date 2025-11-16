@@ -1,12 +1,15 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import PersonIcon from '@mui/icons-material/Person'
 import LogoutIcon from '@mui/icons-material/Logout'
 import StarIcon from '@mui/icons-material/Star'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import AuthModal from './AuthModal'
 
 function UserMenu() {
-  const { currentUser, userData, isAuthenticated, signOut, isFree, isPaid } = useAuth()
+  const navigate = useNavigate()
+  const { currentUser, userData, isAuthenticated, signOut, isFree, isPaid, isAdmin } = useAuth()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
 
@@ -106,6 +109,20 @@ function UserMenu() {
                       </div>
                     )}
                   </div>
+
+                  {/* Admin panel link (only for admins) */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setShowMenu(false)
+                        navigate('/admin-panel')
+                      }}
+                      className="w-full p-4 text-left text-purple-600 hover:bg-purple-50 transition-colors flex items-center gap-2 font-medium border-b border-gray-200"
+                    >
+                      <AdminPanelSettingsIcon fontSize="small" />
+                      Admin Panel
+                    </button>
+                  )}
 
                   {/* Sign out */}
                   <button

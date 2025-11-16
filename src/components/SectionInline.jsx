@@ -108,6 +108,12 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
     for (const file of files) {
       if (file.type.startsWith('image/')) {
         try {
+          // Tier-based compression settings
+          const MAX_WIDTH = userTier === 'free' ? 800 : 1200
+          const MAX_HEIGHT = userTier === 'free' ? 800 : 1200
+          const QUALITY = userTier === 'free' ? 0.5 : 0.7
+          const MAX_FILE_SIZE = userTier === 'free' ? 512000 : 10485760 // 500KB or 10MB
+
           const compressedBlob = await new Promise((resolve, reject) => {
             const reader = new FileReader()
             reader.onerror = () => reject(new Error('Failed to read file'))
@@ -118,8 +124,6 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                 try {
                   const canvas = document.createElement('canvas')
                   const ctx = canvas.getContext('2d')
-                  const MAX_WIDTH = 1200
-                  const MAX_HEIGHT = 1200
                   let width = img.width
                   let height = img.height
 
@@ -145,7 +149,7 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                     } else {
                       reject(new Error('Failed to create blob'))
                     }
-                  }, 'image/jpeg', 0.7)
+                  }, 'image/jpeg', QUALITY)
                 } catch (err) {
                   reject(err)
                 }
@@ -154,6 +158,14 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
             }
             reader.readAsDataURL(file)
           })
+
+          // Check if compressed blob exceeds tier limit
+          if (compressedBlob.size > MAX_FILE_SIZE) {
+            const sizeMB = (compressedBlob.size / 1024 / 1024).toFixed(2)
+            const maxMB = (MAX_FILE_SIZE / 1024 / 1024).toFixed(2)
+            showError(`Image "${file.name}" is too large (${sizeMB}MB). Free tier limit is ${maxMB}MB per image. Try a smaller image or upgrade to paid.`)
+            continue
+          }
 
           const timestamp = Date.now()
           const randomId = Math.random().toString(36).substring(2, 9)
@@ -234,7 +246,6 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
           <button
             onClick={toggleLock}
             className={`p-2 hover:bg-romantic-100 bg-white rounded-lg transition-colors romantic-shadow ${isLocked ? 'text-gray-600' : 'text-romantic-600'}`}
-            title={isLocked ? "Unlock" : "Lock"}
           >
             {isLocked ? '🔒' : '🔓'}
           </button>
@@ -311,7 +322,6 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                   onUpdate(section.id, { title: localTitle })
                 }}
                 className="flex-shrink-0 text-romantic-600 hover:text-romantic-700 bg-white rounded-full p-1.5 shadow-lg border-2 border-romantic-300 text-lg font-bold"
-                title="Done"
               >
                 ✓
               </button>
@@ -323,7 +333,6 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
             className={`text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-gray-900 uppercase tracking-wide border-b-2 border-romantic-300 pb-2 sm:pb-3 mb-4 flex-shrink-0 ${
               !isLocked ? 'cursor-pointer hover:bg-romantic-50/50 hover:border-romantic-400 transition-colors px-2 -mx-2' : ''
             }`}
-            title={!isLocked ? 'Click to edit title' : ''}
           >
             {section.title || (!isLocked ? 'Click to add title...' : '')}
           </h2>
@@ -358,7 +367,6 @@ function SectionInline({ section, index, totalSections, onUpdate, onDelete, onMo
                   !isLocked ? 'cursor-pointer hover:bg-romantic-100/50 rounded p-2 -m-2 transition-colors' : ''
                 }`}
                 dangerouslySetInnerHTML={{ __html: section.description }}
-                title={!isLocked ? 'Click to edit description' : ''}
               />
             )}
           </div>

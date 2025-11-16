@@ -9,6 +9,8 @@ import UserMenu from '../components/UserMenu'
 import { toPng } from 'html-to-image'
 import jsPDF from 'jspdf'
 import { useSnackbar } from '../contexts/SnackbarContext'
+import { useAuth } from '../contexts/AuthContext'
+import { countTotalImages, getTierLimits } from '../services/userService'
 import {
   Box,
   Container,
@@ -22,6 +24,10 @@ import {
   IconButton,
   CircularProgress,
   LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -32,12 +38,24 @@ import {
   PictureAsPdf as PdfIcon,
   Title as TitleIcon,
   Timeline as TimelineIcon,
+  CheckCircle as SuccessIcon,
+  Error as ErrorIcon,
 } from '@mui/icons-material'
 
 function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
   const navigate = useNavigate()
   const { showInfo, showSuccess, showError } = useSnackbar()
+  const { userData } = useAuth()
   const [isExporting, setIsExporting] = useState(false)
+  const [exportProgress, setExportProgress] = useState('')
+  const [exportStatus, setExportStatus] = useState(null) // null, 'success', or 'error'
+  const [exportError, setExportError] = useState('')
+
+  // Calculate quotas
+  const userTier = userData?.tier || 'free'
+  const limits = getTierLimits(userTier)
+  const totalImages = countTotalImages(sections)
+  const totalSections = sections.length
 
   // Redirect if not authenticated
   if (!user) {
@@ -118,7 +136,9 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
     }
 
     setIsExporting(true)
-    showInfo('Creating your beautiful PDF...')
+    setExportStatus(null)
+    setExportProgress('Preparing PDF export...')
+    setExportError('')
 
     try {
       // A4 landscape dimensions in mm
@@ -135,15 +155,17 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
       const sectionElements = document.querySelectorAll('[data-section-id]')
 
       for (let i = 0; i < sectionElements.length; i++) {
-        showInfo(`Processing page ${i + 1} of ${sections.length}...`)
+        setExportProgress(`Processing page ${i + 1} of ${sectionElements.length}...`)
 
         const sectionElement = sectionElements[i]
 
-        // Capture the section as image
+        // Capture the section as image (using lower settings to avoid memory issues)
         const imgData = await toPng(sectionElement, {
-          quality: 0.95,
-          pixelRatio: 2,
+          quality: 0.8,
+          pixelRatio: 1.5, // Reduced from 2 to avoid large images
           backgroundColor: '#ffffff',
+          skipFonts: true, // Skip external font CSS to avoid CORS errors
+          cacheBust: false,
         })
 
         // Load image to get dimensions
@@ -170,15 +192,26 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
         pdf.addImage(imgData, 'PNG', 0, yOffset, imgWidth, imgHeight)
       }
 
+      setExportProgress('Saving PDF...')
+
       // Save the PDF
       pdf.save(`our-love-story-${new Date().toISOString().split('T')[0]}.pdf`)
-      showSuccess('PDF created successfully!')
+
+      setExportStatus('success')
+      setExportProgress('PDF created successfully!')
     } catch (error) {
       console.error('PDF export failed:', error)
-      showError('Failed to create PDF. Please try again.')
-    } finally {
-      setIsExporting(false)
+      setExportStatus('error')
+      setExportError(error.message || 'Failed to create PDF. Please try again.')
+      setExportProgress('Export failed')
     }
+  }
+
+  const closeExportModal = () => {
+    setIsExporting(false)
+    setExportStatus(null)
+    setExportProgress('')
+    setExportError('')
   }
 
   return (
@@ -189,18 +222,57 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
         pb: 4,
       }}
     >
-      {/* Loading Indicator */}
-      {isExporting && (
-        <LinearProgress
-          sx={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-          }}
-        />
-      )}
+      {/* Export Modal */}
+      <Dialog
+        open={isExporting}
+        onClose={() => {}} // Prevent closing during export
+        maxWidth="sm"
+        fullWidth
+        disableEscapeKeyDown
+        BackdropProps={{
+          sx: {
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          }
+        }}
+      >
+        <DialogTitle sx={{ textAlign: 'center', pb: 1 }}>
+          {exportStatus === 'success' ? (
+            <SuccessIcon sx={{ fontSize: 60, color: 'success.main', mb: 1 }} />
+          ) : exportStatus === 'error' ? (
+            <ErrorIcon sx={{ fontSize: 60, color: 'error.main', mb: 1 }} />
+          ) : (
+            <PdfIcon sx={{ fontSize: 60, color: 'primary.main', mb: 1 }} />
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: 'center', pb: 3 }}>
+          {!exportStatus && (
+            <CircularProgress size={40} sx={{ mb: 2 }} />
+          )}
+          <Typography variant="h6" gutterBottom>
+            {exportStatus === 'success' ? 'Export Complete!' : exportStatus === 'error' ? 'Export Failed' : 'Exporting PDF'}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {exportProgress}
+          </Typography>
+          {exportStatus === 'error' && exportError && (
+            <Typography variant="body2" color="error" sx={{ mt: 2 }}>
+              {exportError}
+            </Typography>
+          )}
+        </DialogContent>
+        {exportStatus && (
+          <DialogActions sx={{ justifyContent: 'center', pb: 3 }}>
+            <Button
+              variant="contained"
+              onClick={closeExportModal}
+              color={exportStatus === 'success' ? 'success' : 'primary'}
+              size="large"
+            >
+              {exportStatus === 'success' ? 'Done' : 'Close'}
+            </Button>
+          </DialogActions>
+        )}
+      </Dialog>
 
       {/* App Bar */}
       <AppBar position="sticky" elevation={0} sx={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(10px)', top: 0, zIndex: 1100 }}>
@@ -237,6 +309,24 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
           <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.875rem' } }}>
             Each section below represents one A4 landscape page in your PDF
           </Typography>
+
+          {/* Quota Display (Free Tier Only) */}
+          {userTier === 'free' && (
+            <Stack direction="row" spacing={2} justifyContent="center" mt={2}>
+              <Chip
+                label={`Sections: ${totalSections}/${limits.maxSections}`}
+                color={totalSections >= limits.maxSections ? 'warning' : 'default'}
+                size="small"
+                variant="outlined"
+              />
+              <Chip
+                label={`Images: ${totalImages}/${limits.maxImagesTotal}`}
+                color={totalImages >= limits.maxImagesTotal ? 'warning' : 'default'}
+                size="small"
+                variant="outlined"
+              />
+            </Stack>
+          )}
         </Box>
 
         {/* Action Buttons */}

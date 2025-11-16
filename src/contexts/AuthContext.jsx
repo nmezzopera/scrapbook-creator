@@ -4,7 +4,7 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut
 } from 'firebase/auth'
-import { doc, onSnapshot } from 'firebase/firestore'
+import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { auth, googleProvider, db } from '../firebase'
 import { getUserData, createUserProfile } from '../services/userService'
 
@@ -45,10 +45,13 @@ export function AuthProvider({ children }) {
             data = await createUserProfile({
               uid: user.uid,
               email: user.email,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
               tier: 'free' // Default tier
             })
+          } else if (!data.email) {
+            // Migration: Update existing users to have email field
+            const userRef = doc(db, 'users', user.uid)
+            await setDoc(userRef, { email: user.email }, { merge: true })
+            data.email = user.email
           }
 
           setUserData(data)
@@ -107,7 +110,8 @@ export function AuthProvider({ children }) {
     signOut,
     isAuthenticated: !!currentUser,
     isPaid: userData?.tier === 'paid',
-    isFree: userData?.tier === 'free' || !userData
+    isFree: userData?.tier === 'free' || !userData,
+    isAdmin: userData?.admin === true
   }
 
   return (

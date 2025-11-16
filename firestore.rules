@@ -3,17 +3,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users collection - users can read/write their own data
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-
-      // Allow creating a new user profile
-      allow create: if request.auth != null && request.auth.uid == userId;
+    // Helper: Check if user is admin
+    function isAdmin() {
+      return request.auth != null
+             && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.admin == true;
     }
 
-    // User scrapbooks - users can only access their own scrapbooks
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data, admins can read all
+      allow read: if request.auth != null && (request.auth.uid == userId || isAdmin());
+
+      // Users can write their own data
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Admins can update any user's tier and admin fields
+      allow update: if isAdmin();
+    }
+
+    // User scrapbooks
     match /users/{userId}/scrapbooks/{scrapbookId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Users can access their own scrapbooks, admins can access all
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
   }
 }

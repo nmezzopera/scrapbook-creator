@@ -11,7 +11,7 @@ import { SnackbarProvider } from './contexts/SnackbarContext'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import Login from './pages/Login'
 import Scrapbook from './pages/Scrapbook'
-import Admin from './pages/Admin'
+import AdminPanel from './pages/AdminPanel'
 
 function AppContent() {
   const { currentUser, loading: authLoading } = useAuth()
@@ -192,14 +192,8 @@ function AppContent() {
           }
         />
         <Route
-          path="/admin"
-          element={
-            <Admin
-              user={currentUser}
-              sections={sections}
-              setSections={setSections}
-            />
-          }
+          path="/admin-panel"
+          element={<AdminPanel />}
         />
         <Route
           path="/"

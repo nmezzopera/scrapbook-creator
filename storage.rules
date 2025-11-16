@@ -1,0 +1,18 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // User scrapbook images
+    match /users/{userId}/scrapbook-images/{imageFile} {
+      // Users can only access their own files
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+
+      // Write: max 10MB, images only
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size <= 10485760
+                   && request.resource.contentType.matches('image/.*');
+    }
+  }
+}
