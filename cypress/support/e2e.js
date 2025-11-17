@@ -14,11 +14,6 @@ if (!app.document.head.querySelector('[data-hide-command-log-request]')) {
   app.document.head.appendChild(style)
 }
 
-// Preserve cookies between tests
-Cypress.Cookies.defaults({
-  preserve: ['session', '__session'],
-})
-
 // Global before hook
 before(() => {
   cy.log('Starting E2E Test Suite')

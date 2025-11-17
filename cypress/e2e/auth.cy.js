@@ -5,7 +5,7 @@ describe('Authentication', () => {
 
   it('displays the landing page', () => {
     cy.contains('Our Love Story').should('be.visible')
-    cy.contains('Create Beautiful Digital Scrapbooks').should('be.visible')
+    cy.contains('A collection of our most precious moments').should('be.visible')
   })
 
   it('redirects to login when not authenticated', () => {
