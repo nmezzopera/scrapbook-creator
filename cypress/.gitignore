@@ -1,0 +1,8 @@
+# Cypress artifacts
+videos/
+screenshots/
+downloads/
+
+# Test results
+results/
+reports/

@@ -1,0 +1,39 @@
+{
+  "testUser": {
+    "email": "test@scrapbook.com",
+    "displayName": "Test User",
+    "uid": "test-user-123"
+  },
+  "sampleSection": {
+    "title": "Our First Date",
+    "description": "<p>It was a beautiful summer evening when we first met at the park. The sunset painted the sky in shades of pink and orange, creating the perfect backdrop for what would become the beginning of our love story.</p>",
+    "type": "regular"
+  },
+  "titleSection": {
+    "title": "Our Love Story",
+    "description": "<p>A Journey of Two Hearts</p>",
+    "subtitle": "2024 - Forever",
+    "type": "title"
+  },
+  "timelineSection": {
+    "title": "Our Timeline",
+    "type": "timeline",
+    "events": [
+      {
+        "year": "2024",
+        "date": "January 15",
+        "description": "We met at the coffee shop"
+      },
+      {
+        "year": "2024",
+        "date": "March 20",
+        "description": "Our first trip together"
+      },
+      {
+        "year": "2024",
+        "date": "June 10",
+        "description": "We moved in together"
+      }
+    ]
+  }
+}
