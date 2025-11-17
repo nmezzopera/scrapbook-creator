@@ -23,8 +23,20 @@ admin.initializeApp();
 exports.generatePdf = onRequest({
   timeoutSeconds: 300,
   memory: '2GiB',
-  cors: true
+  cors: true,
+  region: 'europe-west1'
 }, async (req, res) => {
+  // Set CORS headers explicitly
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
   try {
     // Get token from query parameters
     const token = req.query.token;
@@ -82,11 +94,32 @@ exports.generatePdf = onRequest({
 
     const page = await browser.newPage();
 
+    // Increase timeout for large PDFs (default is 30s, we need more for 100+ images)
+    page.setDefaultTimeout(180000); // 3 minutes
+
+    // Capture console logs from the browser for debugging
+    page.on('console', msg => {
+      const type = msg.type();
+      const text = msg.text();
+      if (type === 'error') {
+        console.error(`[Browser Error] ${text}`);
+      } else if (type === 'warning') {
+        console.warn(`[Browser Warning] ${text}`);
+      } else {
+        console.log(`[Browser] ${text}`);
+      }
+    });
+
+    // Capture page errors
+    page.on('pageerror', error => {
+      console.error(`[Page Error] ${error.message}`);
+    });
+
     // Set viewport to A4 landscape dimensions (approximately)
     await page.setViewport({
       width: 1920,  // Wider for landscape
       height: 1358, // A4 landscape aspect ratio
-      deviceScaleFactor: 2, // High DPI for better quality
+      deviceScaleFactor: 1.5, // Reduced from 2 to speed up PDF generation
     });
 
     // Navigate to the preview page
@@ -96,25 +129,44 @@ exports.generatePdf = onRequest({
       timeout: 120000
     });
 
-    console.log('Page loaded, waiting for images...');
+    console.log('Page loaded, waiting for pdf-ready event...');
 
-    // Wait for images to load
+    // Wait for the custom 'pdf-ready' event from the React app
+    // This event is dispatched after all images are loaded
     await page.evaluate(() => {
-      return Promise.all(
-        Array.from(document.images)
-          .filter(img => !img.complete)
-          .map(img => new Promise(resolve => {
-            img.onload = img.onerror = resolve;
-          }))
-      );
+      return new Promise((resolve) => {
+        // Check if already ready
+        if (window.pdfReady) {
+          console.log('[Puppeteer] PDF already ready');
+          resolve();
+          return;
+        }
+
+        // Wait for the custom event
+        console.log('[Puppeteer] Waiting for pdf-ready event...');
+        const timeout = setTimeout(() => {
+          console.log('[Puppeteer] Timeout waiting for pdf-ready event, proceeding anyway');
+          resolve();
+        }, 30000); // 30 second timeout
+
+        window.addEventListener('pdf-ready', () => {
+          console.log('[Puppeteer] Received pdf-ready event!');
+          clearTimeout(timeout);
+          resolve();
+        }, { once: true });
+      });
     });
 
-    console.log('Images loaded, waiting for rendering...');
+    console.log('PDF ready event received, waiting for fonts and final render...');
 
-    // Wait a bit for final rendering
+    // Wait for fonts to load (important for emoji support)
+    await page.evaluate(() => document.fonts.ready);
+
+    // Short wait for final rendering
     await page.waitForTimeout(3000);
 
-    // Generate PDF
+    // Generate PDF (timeout set via page.setDefaultTimeout above)
+    console.log('Starting PDF generation (this may take 1-2 minutes for large scrapbooks)...');
     const pdfBuffer = await page.pdf({
       format: 'A4',
       landscape: true,
@@ -128,18 +180,48 @@ exports.generatePdf = onRequest({
       }
     });
 
+    console.log(`PDF generated successfully, size: ${(pdfBuffer.length / 1024 / 1024).toFixed(2)} MB`);
+
     await browser.close();
+
+    console.log('PDF generated, uploading to Storage...');
+
+    // Upload PDF to Firebase Storage instead of returning it directly
+    // (Cloud Functions have response size limits)
+    // NOTE: Lifecycle policy is configured to auto-delete files in pdfs/ folder after 24 hours
+    const bucket = admin.storage().bucket();
+    const fileName = `pdfs/${tokenData.userId || 'anonymous'}/scrapbook-${Date.now()}.pdf`;
+    const file = bucket.file(fileName);
+
+    await file.save(pdfBuffer, {
+      metadata: {
+        contentType: 'application/pdf',
+        metadata: {
+          userId: tokenData.userId || 'anonymous',
+          generatedAt: new Date().toISOString()
+        }
+      }
+    });
+
+    console.log('PDF uploaded to Storage, generating download URL...');
+
+    // Generate a signed URL that expires in 1 hour
+    const [url] = await file.getSignedUrl({
+      action: 'read',
+      expires: Date.now() + 60 * 60 * 1000 // 1 hour from now
+    });
+
+    console.log('Download URL generated successfully');
 
     // Delete the token now that we're done
     await tokenDoc.ref.delete();
 
-    // Set response headers
-    res.set('Content-Type', 'application/pdf');
-    res.set('Content-Disposition', `attachment; filename="our-love-story-${new Date().toISOString().split('T')[0]}.pdf"`);
-    res.set('Content-Length', pdfBuffer.length);
-
-    // Send PDF
-    res.send(pdfBuffer);
+    // Return the download URL
+    res.status(200).json({
+      success: true,
+      downloadUrl: url,
+      fileName: `our-love-story-${new Date().toISOString().split('T')[0]}.pdf`
+    });
 
   } catch (error) {
     console.error('PDF generation failed:', error);

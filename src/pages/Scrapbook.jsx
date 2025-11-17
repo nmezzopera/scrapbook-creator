@@ -155,10 +155,8 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
       setExportProgress('Generating PDF on server...')
 
       // Get the Cloud Function URL
-      // In production, this will be the deployed function URL
-      // For now, we'll use the Firebase project ID to construct it
       const functionUrl = import.meta.env.VITE_PDF_FUNCTION_URL ||
-        `https://generatepdf-${import.meta.env.VITE_FIREBASE_REGION || 'us-central1'}-relationship-scrapbook.cloudfunctions.net/generatePdf`
+        `https://${import.meta.env.VITE_FIREBASE_REGION || 'europe-west1'}-relationship-scrapbook.cloudfunctions.net/generatePdf`
 
       // Call the Cloud Function
       const response = await fetch(`${functionUrl}?token=${token}`, {
@@ -170,17 +168,30 @@ function Scrapbook({ user, sections, setSections, syncing, onSignOut }) {
         throw new Error(errorData.error || `Server error: ${response.statusText}`)
       }
 
+      setExportProgress('Getting download link...')
+
+      // Get the download URL from the response
+      const data = await response.json()
+
+      if (!data.success || !data.downloadUrl) {
+        throw new Error('Failed to get download URL from server')
+      }
+
       setExportProgress('Downloading PDF...')
 
-      // Download the PDF
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      // Fetch the PDF from the signed URL and create a proper download
+      const pdfResponse = await fetch(data.downloadUrl)
+      const pdfBlob = await pdfResponse.blob()
+
+      // Create a blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(pdfBlob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = `our-love-story-${new Date().toISOString().split('T')[0]}.pdf`
+      a.href = blobUrl
+      a.download = data.fileName || `our-love-story-${new Date().toISOString().split('T')[0]}.pdf`
+      a.target = '_blank' // Open in new tab as fallback
       document.body.appendChild(a)
       a.click()
-      window.URL.revokeObjectURL(url)
+      window.URL.revokeObjectURL(blobUrl) // Clean up
       document.body.removeChild(a)
 
       setExportStatus('success')
