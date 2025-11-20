@@ -1,20 +1,57 @@
 // Custom Cypress commands for Scrapbook Creator
 
 /**
- * Login with Google (using cypress-firebase)
+ * Login with test user (using Firebase Auth emulator)
  * @example cy.login()
  */
 Cypress.Commands.add('login', () => {
-  // Use cypress-firebase login command
-  // This will authenticate with Firebase using a test account
-  cy.log('Logging in with test account')
+  const testUid = Cypress.env('TEST_UID')
+  const testEmail = Cypress.env('TEST_EMAIL')
+  const testDisplayName = Cypress.env('TEST_DISPLAY_NAME')
 
-  // For now, we'll visit the app and let the user authenticate manually
-  // In production, you'd use cy.login() from cypress-firebase with a test account
-  cy.visit('/')
+  cy.log(`Logging in as ${testEmail}`)
 
-  // Wait for auth state to resolve
-  cy.wait(2000)
+  // Create custom token
+  cy.task('createCustomToken', {
+    uid: testUid,
+    email: testEmail,
+    displayName: testDisplayName
+  }).then((token) => {
+    // Visit the page first
+    cy.visit('/')
+
+    // Then sign in with the custom token
+    cy.window().its('signInWithCustomToken').then((signInFn) => {
+      return signInFn(token)
+    })
+  })
+
+  // Wait for auth state by checking for authenticated UI elements
+  cy.url().should('include', '/scrapbook')
+  cy.contains('Our Love Story').should('be.visible')
+})
+
+/**
+ * Clear all sections from the scrapbook
+ * @example cy.clearAllSections()
+ */
+Cypress.Commands.add('clearAllSections', () => {
+  cy.log('Clearing all sections')
+
+  cy.get('body').then($body => {
+    const deleteAll = () => {
+      if ($body.find('[data-section-id]').length > 0) {
+        cy.get('[data-section-id]').first().within(() => {
+          cy.get('button[aria-label*="delete"], button[title*="Delete"]').first().click()
+        })
+        cy.contains('Yes, delete it').click()
+        cy.get('body').then($newBody => {
+          deleteAll()
+        })
+      }
+    }
+    deleteAll()
+  })
 })
 
 /**
@@ -25,7 +62,8 @@ Cypress.Commands.add('logout', () => {
   cy.log('Logging out')
   cy.get('[data-testid="user-menu"]').click()
   cy.contains('Logout').click()
-  cy.wait(1000)
+  // Wait for redirect to login page
+  cy.url().should('include', '/login')
 })
 
 /**
@@ -36,15 +74,36 @@ Cypress.Commands.add('logout', () => {
 Cypress.Commands.add('createSection', (type = 'regular') => {
   cy.log(`Creating ${type} section`)
 
+  // Determine button text
+  let buttonText
   if (type === 'title') {
-    cy.contains('Add Title Page').click()
+    buttonText = 'Add Title Page'
   } else if (type === 'timeline') {
-    cy.contains('Add Timeline').click()
+    buttonText = 'Add Timeline'
   } else {
-    cy.contains('Add Section').click()
+    buttonText = 'Add Regular Page'
   }
 
-  cy.wait(500)
+  // Wait for the page to be fully loaded by checking for the button
+  cy.contains('button', buttonText).should('be.visible')
+
+  // Get initial section count (may be 0)
+  cy.get('body').then($body => {
+    const initialCount = $body.find('[data-section-id]').length
+    cy.log(`Initial section count: ${initialCount}`)
+
+    // Click the button
+    cy.contains('button', buttonText).click()
+
+    // Wait for new section to appear (count should increase by 1)
+    if (initialCount === 0) {
+      // If starting from 0, just wait for at least 1 section
+      cy.get('[data-section-id]', { timeout: 15000 }).should('have.length.at.least', 1)
+    } else {
+      // If there are existing sections, wait for the count to increase
+      cy.get('[data-section-id]', { timeout: 15000 }).should('have.length', initialCount + 1)
+    }
+  })
 })
 
 /**
@@ -54,11 +113,17 @@ Cypress.Commands.add('createSection', (type = 'regular') => {
  */
 Cypress.Commands.add('deleteSection', (index) => {
   cy.log(`Deleting section at index ${index}`)
-  cy.get('[data-section-id]').eq(index).within(() => {
-    cy.get('[data-testid="delete-section"]').click()
+
+  // Get initial count
+  cy.get('[data-section-id]').its('length').then(initialCount => {
+    cy.get('[data-section-id]').eq(index).within(() => {
+      cy.get('[data-testid="delete-section"]').click()
+    })
+    cy.contains('Yes, delete it').click()
+
+    // Wait for section to be removed
+    cy.get('[data-section-id]').should('have.length', initialCount - 1)
   })
-  cy.contains('Yes, delete it').click()
-  cy.wait(500)
 })
 
 /**
@@ -70,9 +135,8 @@ Cypress.Commands.add('deleteSection', (index) => {
 Cypress.Commands.add('addTextToSection', (sectionIndex, text) => {
   cy.log(`Adding text to section ${sectionIndex}`)
   cy.get('[data-section-id]').eq(sectionIndex).within(() => {
-    cy.get('[contenteditable="true"]').first().type(text)
+    cy.get('[contenteditable="true"]').first().type(text).should('contain', text)
   })
-  cy.wait(500)
 })
 
 /**

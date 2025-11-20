@@ -70,6 +70,15 @@ npm run build
 firebase deploy --only hosting
 ```
 
+## Documentation
+
+Detailed documentation is available in the `docs/` folder:
+
+- **[Testing Guide](docs/TESTING.md)** - Comprehensive guide for running E2E tests with Cypress and Firebase emulators
+- **[Firebase Setup](docs/FIREBASE_SETUP.md)** - Complete Firebase configuration and deployment guide
+- **[Storage Policy](docs/STORAGE_POLICY.md)** - Storage lifecycle and cleanup configuration
+- **[AI Setup](docs/AI_SETUP.md)** - AI text polishing feature setup and configuration
+
 ## Tech Stack
 
 - **Frontend**: React 18, Vite

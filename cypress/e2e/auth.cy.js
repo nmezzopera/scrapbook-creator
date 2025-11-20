@@ -16,12 +16,18 @@ describe('Authentication', () => {
     cy.contains('Sign in with Google').should('be.visible')
   })
 
-  // Note: Actual Google sign-in requires manual interaction or service account
-  // For full automation, you'd use cypress-firebase with a test account
-  it.skip('can sign in with Google', () => {
-    cy.contains('Sign in with Google').click()
-    // This would require Firebase test credentials
-    cy.url().should('not.include', '/login')
-    cy.contains('Our Love Story').should('be.visible')
+  describe('With Emulators', () => {
+    it('can sign in with emulator auth', () => {
+      cy.login()
+      cy.url().should('include', '/scrapbook')
+      cy.contains('Our Love Story').should('be.visible')
+    })
+
+    it('shows authenticated UI elements', () => {
+      cy.login()
+      // Should show user interface elements (buttons, icons, etc)
+      cy.get('button').should('exist')
+      cy.get('svg').should('exist')
+    })
   })
 })

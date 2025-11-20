@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import * as emoji from 'node-emoji'
+import { aiService } from '../services/aiService'
+import AIPolishModal from './AIPolishModal'
 
 function RichTextEditor({ value, onChange, onDone }) {
   const editorRef = useRef(null)
@@ -11,6 +13,13 @@ function RichTextEditor({ value, onChange, onDone }) {
   const [selectedEmojiIndex, setSelectedEmojiIndex] = useState(0)
   const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0 })
   const emojiPopupRef = useRef(null)
+
+  // AI polish state
+  const [isPolishing, setIsPolishing] = useState(false)
+  const [polishError, setPolishError] = useState(null)
+  const [showPolishModal, setShowPolishModal] = useState(false)
+  const [originalText, setOriginalText] = useState('')
+  const [polishedText, setPolishedText] = useState('')
 
   useEffect(() => {
     if (editorRef.current && value && editorRef.current.innerHTML !== value) {
@@ -282,12 +291,88 @@ function RichTextEditor({ value, onChange, onDone }) {
     }
   }
 
+  const handlePolishText = async () => {
+    if (!editorRef.current || isPolishing) return
+
+    // Get current HTML content
+    const htmlContent = editorRef.current.innerHTML
+
+    // Get plain text from HTML (strip tags but preserve emojis)
+    const tempDiv = document.createElement('div')
+    tempDiv.innerHTML = htmlContent
+    const plainText = tempDiv.textContent || tempDiv.innerText || ''
+
+    if (!plainText.trim()) {
+      setPolishError('Please enter some text first')
+      setTimeout(() => setPolishError(null), 3000)
+      return
+    }
+
+    setIsPolishing(true)
+    setPolishError(null)
+
+    try {
+      const polishedPlainText = await aiService.polishText(plainText)
+
+      // Convert line breaks to <br> tags for HTML display
+      // First replace double newlines (paragraph breaks) with a placeholder
+      // Then replace single newlines with <br>
+      // Then convert placeholder back to double <br> for empty lines
+      const polishedHtmlText = polishedPlainText
+        .replace(/\n\n/g, '<<<PARAGRAPH_BREAK>>>')  // Preserve paragraph breaks
+        .replace(/\n/g, '<br>')                      // Convert single line breaks
+        .replace(/<<<PARAGRAPH_BREAK>>>/g, '<br><br>') // Restore paragraph breaks
+
+      // Store both versions for comparison
+      setOriginalText(htmlContent)
+      setPolishedText(polishedHtmlText)
+
+      // Show the comparison modal
+      setShowPolishModal(true)
+    } catch (error) {
+      console.error('Error polishing text:', error)
+      setPolishError(error.message || 'Failed to polish text. Please try again.')
+      setTimeout(() => setPolishError(null), 5000)
+    } finally {
+      setIsPolishing(false)
+    }
+  }
+
+  const handleAcceptPolishedText = (newText) => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = newText
+      onChange(newText)
+    }
+  }
+
 
   return (
     <div className="space-y-2 relative">
-      {/* Done button for mobile/tablet */}
-      {onDone && (
-        <div className="flex justify-end mb-2">
+      {/* Action buttons */}
+      <div className="flex justify-between items-center mb-2">
+        {/* AI Polish button */}
+        <button
+          type="button"
+          onClick={handlePolishText}
+          disabled={isPolishing}
+          className="text-romantic-600 hover:text-romantic-700 bg-white rounded-full px-4 py-2 shadow-lg border-2 border-romantic-300 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          title="Polish text and fix grammar using AI"
+        >
+          {isPolishing ? (
+            <>
+              <span className="inline-block animate-spin">⚙️</span>
+              <span>Polishing...</span>
+            </>
+          ) : (
+            <>
+              <span>✨</span>
+              <span>Polish Text</span>
+            </>
+          )}
+        </button>
+
+        {/* Done button for mobile/tablet */}
+        {onDone && (
           <button
             type="button"
             onClick={onDone}
@@ -296,8 +381,24 @@ function RichTextEditor({ value, onChange, onDone }) {
           >
             ✓ Done
           </button>
+        )}
+      </div>
+
+      {/* Error message */}
+      {polishError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm">
+          {polishError}
         </div>
       )}
+
+      {/* AI Polish Comparison Modal */}
+      <AIPolishModal
+        open={showPolishModal}
+        onClose={() => setShowPolishModal(false)}
+        originalText={originalText}
+        polishedText={polishedText}
+        onAccept={handleAcceptPolishedText}
+      />
 
       {/* Emoji Autocomplete Popup */}
       {showEmojiPopup && emojiSuggestions.length > 0 && (
